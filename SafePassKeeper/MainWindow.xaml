@@ -1,0 +1,106 @@
+﻿<Window x:Class="SafePassKeeper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SafePassKeeper"
+        mc:Ignorable="d"
+        Title="SafePassKeeper" Height="500" Width="850"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" Icon="/icon.ico">
+
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#0078D7"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1084E3"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#A0A0A0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="#F3F3F3">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Background="#2D2D30" Padding="15,10">
+            <Grid>
+                <TextBlock Text="SafePass Keeper" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="SpecifyFilePathButton" Content="Set File Path &amp; Password" Click="SetFilePathButton_Click" Background="#4CAF50"/>
+                    <Button x:Name="ExportBackupButton" Visibility="Collapsed" Content="Export Backup" Click="ExportBackupButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0" Margin="0,0,15,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <ListBox x:Name="AccountListBox" Visibility="Collapsed" SelectionChanged="AccountListBox_SelectionChanged" Margin="0,0,0,10"/>
+
+                <UniformGrid Grid.Row="1" Columns="3" Margin="-5,0,-5,0">
+                    <Button x:Name="AddAccountButton" Visibility="Collapsed" Content="Add" Click="AddAccountButton_Click"/>
+                    <Button x:Name="EditAccountButton" Visibility="Collapsed" Content="Edit" Click="EditAccountButton_Click" Background="#FF9800"/>
+                    <Button x:Name="DeleteAccountButton" Visibility="Collapsed" Content="Delete" Click="DeleteAccountButton_Click" Background="#F44336"/>
+                </UniformGrid>
+            </Grid>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Account Details" FontSize="16" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,10"/>
+
+                <TextBox x:Name="DetailsTextBox" Grid.Row="1" Visibility="Collapsed" TextWrapping="Wrap" IsReadOnly="True" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
