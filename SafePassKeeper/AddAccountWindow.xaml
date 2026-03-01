@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SafePassKeeper"
         mc:Ignorable="d"
-        Title="Account Details" Height="620" Width="450" Icon="icon.ico"
+        Title="Account Details" Height="620" Width="450"
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI, Tahoma, Geneva, Verdana, sans-serif"
-        Background="#F3F3F3">
+        Background="#F3F3F3" Icon="/icon.ico">
 
     <Window.Resources>
         <Style TargetType="Button">
