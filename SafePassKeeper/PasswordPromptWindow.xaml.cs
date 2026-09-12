@@ -1,29 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
+﻿using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace SafePassKeeper
 {
-    /// <summary>
-    /// Interakční logika pro PasswordPromptWindow.xaml
-    /// </summary>
     public partial class PasswordPromptWindow : Window
     {
-        public string Password { get; private set; }
+        public string? Password { get; private set; }
 
-        public PasswordPromptWindow()
+        // Upravený konstruktor přijímá bool
+        public PasswordPromptWindow(bool isNewFile)
         {
             InitializeComponent();
+
+            if (isNewFile)
+            {
+                // Režim: Nový prázdný soubor
+                TitleText.Text = "INITIALIZE NEW DATABANK";
+                TitleText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00E5FF")); // Tritanium Cyan
+                TitleGlow.Color = (Color)ColorConverter.ConvertFromString("#00E5FF");
+
+                SubtitleText.Text = "// SET MASTER ENCRYPTION KEY";
+
+                ActionBtn.Content = "[ ENCRYPT ]";
+                ActionBtn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FF66")); // Shield Green
+            }
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)

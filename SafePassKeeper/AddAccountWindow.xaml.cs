@@ -23,7 +23,7 @@ namespace SafePassKeeper
         //  public Account NewAccount { get; private set; }
         public Account EditedAccount { get; private set; }
         public bool IsNewAccount { get; private set; }
-        public AddAccountWindow(Account account = null)
+        public AddAccountWindow(Account? account = null)
         {
             InitializeComponent();
             if (account == null)
@@ -75,5 +75,7 @@ namespace SafePassKeeper
             DialogResult = false;
             Close();
         }
+
     }
+
 }

@@ -4,3 +4,7 @@
 *.user
 *.suo
 *.cache
+.shadow-context.local.txt
+.shadow-roles.json
+AI_Output.txt
+*_wpftmp.csproj

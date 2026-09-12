@@ -1,9 +1,111 @@
 ﻿<Application x:Class="SafePassKeeper.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:SafePassKeeper"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+
+        <!-- ================= PALETA BAREV ================= -->
+        <SolidColorBrush x:Key="VoidBlack" Color="#090B10"/>
+        <SolidColorBrush x:Key="StationGray" Color="#151821"/>
+        <SolidColorBrush x:Key="GridSteel" Color="#24283B"/>
+        <SolidColorBrush x:Key="TritaniumCyan" Color="#00E5FF"/>
+        <SolidColorBrush x:Key="TritaniumCyanGlow" Color="#3300E5FF"/>
+        <SolidColorBrush x:Key="ShieldGreen" Color="#00FF66"/>
+        <SolidColorBrush x:Key="HullOrange" Color="#FF3300"/>
+        <SolidColorBrush x:Key="StarlightWhite" Color="#E0E6ED"/>
+        <SolidColorBrush x:Key="SensorMuted" Color="#6A738A"/>
+        <SolidColorBrush x:Key="Transparent" Color="#00000000"/>
+
+        <!-- ================= EFEKTY ================= -->
+        <DropShadowEffect x:Key="NeonGlow" Color="#00E5FF" BlurRadius="15" ShadowDepth="0" Opacity="0.6"/>
+        <DropShadowEffect x:Key="WarningGlow" Color="#FF3300" BlurRadius="15" ShadowDepth="0" Opacity="0.6"/>
+        <DropShadowEffect x:Key="SuccessGlow" Color="#00FF66" BlurRadius="15" ShadowDepth="0" Opacity="0.6"/>
+
+        <!-- ================= GHOST BUTTON (CHAMFERED) ================= -->
+        <Style TargetType="Button" x:Key="TechGhostButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TritaniumCyan}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource GridSteel}"/>
+            <Setter Property="FontFamily" Value="Rajdhani, Orbitron, Consolas"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <!-- Pozadí a okraj -->
+                            <Border x:Name="BaseBorder" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Background="{TemplateBinding Background}"/>
+
+                            <!-- Ořez rohů (Chamfer) pomocí trojúhelníků, které mají barvu nadřazeného panelu -->
+                            <Polygon Points="0,0 12,0 0,12" Fill="{StaticResource VoidBlack}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-1,-1,0"/>
+                            <Line x:Name="TopRightCut" X1="0" Y1="12" X2="12" Y2="0" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-1,-1,0"/>
+
+                            <Polygon Points="0,12 12,12 12,0" Fill="{StaticResource VoidBlack}" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-1,0,0,-1"/>
+                            <Line x:Name="BottomLeftCut" X1="0" Y1="12" X2="12" Y2="0" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-1,0,0,-1"/>
+
+                            <!-- Obsah -->
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BaseBorder" Property="Background" Value="{StaticResource TritaniumCyanGlow}"/>
+                                <Setter TargetName="BaseBorder" Property="BorderBrush" Value="{StaticResource TritaniumCyan}"/>
+                                <Setter TargetName="BaseBorder" Property="Effect" Value="{StaticResource NeonGlow}"/>
+                                <Setter TargetName="TopRightCut" Property="Stroke" Value="{StaticResource TritaniumCyan}"/>
+                                <Setter TargetName="BottomLeftCut" Property="Stroke" Value="{StaticResource TritaniumCyan}"/>
+                                <Setter Property="Foreground" Value="{StaticResource StarlightWhite}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Varianta: Destruktivní (Delete) -->
+        <Style TargetType="Button" BasedOn="{StaticResource TechGhostButton}" x:Key="TechDangerButton">
+            <Setter Property="Foreground" Value="{StaticResource HullOrange}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#33FF3300"/>
+                    <Setter Property="Effect" Value="{StaticResource WarningGlow}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ================= TEXTBOXY A HESLA (HUD STYLE) ================= -->
+        <Style TargetType="Control" x:Key="TechInputStyle">
+            <Setter Property="Background" Value="{StaticResource StationGray}"/>
+            <Setter Property="Foreground" Value="{StaticResource StarlightWhite}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource GridSteel}"/>
+            <Setter Property="BorderThickness" Value="1,1,1,1"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="FontFamily" Value="Fira Code, Roboto Mono, Consolas"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Control">
+                        <Grid>
+                            <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}">
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                            </Border>
+                            <!-- Dekorativní růžek -->
+                            <Rectangle Fill="{StaticResource TritaniumCyan}" Width="4" Height="4" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-1,-1" Visibility="Hidden" x:Name="FocusTick"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource TritaniumCyan}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#1A00E5FF"/>
+                                <Setter TargetName="FocusTick" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource TechInputStyle}"/>
+        <Style TargetType="PasswordBox" BasedOn="{StaticResource TechInputStyle}"/>
+
     </Application.Resources>
 </Application>

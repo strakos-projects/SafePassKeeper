@@ -1,106 +1,162 @@
 ﻿<Window x:Class="SafePassKeeper.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SafePassKeeper"
-        mc:Ignorable="d"
-        Title="SafePassKeeper" Height="500" Width="850"
+        Title="SafePassKeeper - Tactical HUD" Height="600" Width="950"
         WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" Icon="/icon.ico">
+        Background="{StaticResource VoidBlack}"
+        FontFamily="Inter, Segoe UI, sans-serif" Icon="/icon.ico">
 
-    <Window.Resources>
-        <Style TargetType="Button">
-            <Setter Property="Background" Value="#0078D7"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,8"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#1084E3"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#A0A0A0"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
-        </Style>
-
-        <Style TargetType="ListBox">
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
-        </Style>
-    </Window.Resources>
-
-    <Grid Background="#F3F3F3">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="50"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Background="#2D2D30" Padding="15,10">
+        <Border BorderBrush="{StaticResource GridSteel}" BorderThickness="0,0,0,1" Background="{StaticResource StationGray}" Padding="20,0">
             <Grid>
-                <TextBlock Text="SafePass Keeper" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text="SAFEPASS KEEPER // SECURE DATALINK" Foreground="{StaticResource TritaniumCyan}" 
+                           FontFamily="Rajdhani, Orbitron, Consolas" FontSize="18" FontWeight="Bold" 
+                           VerticalAlignment="Center"/>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="SpecifyFilePathButton" Content="Set File Path &amp; Password" Click="SetFilePathButton_Click" Background="#4CAF50"/>
-                    <Button x:Name="ExportBackupButton" Visibility="Collapsed" Content="Export Backup" Click="ExportBackupButton_Click"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button x:Name="SpecifyFilePathButton" Content="[ MOUNT DATABANK ]" Click="SetFilePathButton_Click" Style="{StaticResource TechGhostButton}" Margin="0,0,10,0"/>
+                    <Button x:Name="ExportBackupButton" Visibility="Collapsed" Content="[ EXPORT ]" Click="ExportBackupButton_Click" Style="{StaticResource TechGhostButton}"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" Margin="15">
+        <Grid Grid.Row="1" Margin="20">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1.2*"/>
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="0" Margin="0,0,15,0">
+            <Grid Grid.Column="0" Margin="0,0,20,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <ListBox x:Name="AccountListBox" Visibility="Collapsed" SelectionChanged="AccountListBox_SelectionChanged" Margin="0,0,0,10"/>
+                <TextBox x:Name="DetailsTextBox" Visibility="Collapsed" Width="0" Height="0" Opacity="0" IsHitTestVisible="False"/>
 
-                <UniformGrid Grid.Row="1" Columns="3" Margin="-5,0,-5,0">
-                    <Button x:Name="AddAccountButton" Visibility="Collapsed" Content="Add" Click="AddAccountButton_Click"/>
-                    <Button x:Name="EditAccountButton" Visibility="Collapsed" Content="Edit" Click="EditAccountButton_Click" Background="#FF9800"/>
-                    <Button x:Name="DeleteAccountButton" Visibility="Collapsed" Content="Delete" Click="DeleteAccountButton_Click" Background="#F44336"/>
-                </UniformGrid>
+                <ListBox x:Name="AccountListBox" Visibility="Collapsed" SelectionChanged="AccountListBox_SelectionChanged" 
+                         Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="CardBorder" Background="{StaticResource StationGray}" 
+                                                BorderBrush="{StaticResource GridSteel}" BorderThickness="3,1,1,1" 
+                                                Margin="0,0,0,10" Padding="15" Cursor="Hand">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource TritaniumCyan}"/>
+                                                <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource TritaniumCyanGlow}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource SensorMuted}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding AccountName}" Foreground="{StaticResource StarlightWhite}" FontFamily="Rajdhani, Orbitron, Arial" FontWeight="Bold" FontSize="16" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding Username}" Foreground="{StaticResource SensorMuted}" FontFamily="Inter, Segoe UI" FontSize="12"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border Grid.Row="1" Background="{StaticResource StationGray}" BorderBrush="{StaticResource GridSteel}" BorderThickness="1" Padding="10" Margin="0,10,0,0">
+                    <UniformGrid Columns="3">
+                        <Button x:Name="AddAccountButton" Visibility="Collapsed" Content="[ ADD ]" Click="AddAccountButton_Click" Style="{StaticResource TechGhostButton}" Margin="0,0,5,0"/>
+                        <Button x:Name="EditAccountButton" Visibility="Collapsed" Content="[ EDIT ]" Click="EditAccountButton_Click" Style="{StaticResource TechGhostButton}" Margin="5,0,5,0"/>
+                        <Button x:Name="DeleteAccountButton" Visibility="Collapsed" Content="[ DEL ]" Click="DeleteAccountButton_Click" Style="{StaticResource TechDangerButton}" Margin="5,0,0,0"/>
+                    </UniformGrid>
+                </Border>
             </Grid>
 
-            <Grid Grid.Column="1">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <Border Grid.Column="1" Background="{StaticResource StationGray}" BorderBrush="{StaticResource GridSteel}" BorderThickness="1" 
+                    Visibility="{Binding Visibility, ElementName=DetailsTextBox}" Padding="30">
 
-                <TextBlock Text="Account Details" FontSize="16" FontWeight="SemiBold" Foreground="#333" Margin="0,0,0,10"/>
+                <Grid DataContext="{Binding ElementName=AccountListBox, Path=SelectedItem}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <TextBox x:Name="DetailsTextBox" Grid.Row="1" Visibility="Collapsed" TextWrapping="Wrap" IsReadOnly="True" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas"/>
-            </Grid>
+                    <StackPanel Grid.Row="0" Margin="0,0,0,25">
+                        <TextBlock Text="// IDENTIFIER" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding AccountName}" Foreground="{StaticResource StarlightWhite}" FontSize="24" FontFamily="Rajdhani, Arial" FontWeight="Bold"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,0,0,25">
+                        <TextBlock Text="// TARGET_URL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding Domain}" Foreground="{StaticResource TritaniumCyan}" FontSize="16" FontFamily="Fira Code, Consolas"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Margin="0,0,0,25">
+                        <TextBlock Text="// USER_CREDENTIAL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding Username}" Foreground="{StaticResource StarlightWhite}" FontSize="16" FontFamily="Fira Code, Consolas"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Margin="0,0,0,25">
+                        <TextBlock Text="// ENCRYPTED_KEY" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal">
+
+                            <ContentControl Content="{Binding}">
+                                <ContentControl.ContentTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock x:Name="MaskedPasswordTxt" Text="••••••••••••••••" Foreground="{StaticResource StarlightWhite}" FontSize="18" FontFamily="Fira Code, Consolas" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="RevealedPasswordTxt" Text="{Binding Password}" Visibility="Collapsed" Foreground="{StaticResource HullOrange}" FontSize="18" FontFamily="Fira Code, Consolas" VerticalAlignment="Center">
+                                                <TextBlock.Effect>
+                                                    <!-- ZDE JE OPRAVA BARVY NA #FF3300 -->
+                                                    <DropShadowEffect Color="#FF3300" BlurRadius="8" ShadowDepth="0" Opacity="0.8"/>
+                                                </TextBlock.Effect>
+                                            </TextBlock>
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, ElementName=RevealToggleBtn}" Value="True">
+                                                <Setter TargetName="MaskedPasswordTxt" Property="Visibility" Value="Collapsed"/>
+                                                <Setter TargetName="RevealedPasswordTxt" Property="Visibility" Value="Visible"/>
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" Storyboard.TargetName="RevealedPasswordTxt" From="0" To="1" Duration="0:0:0.1" AutoReverse="True" RepeatBehavior="2x"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" Storyboard.TargetName="RevealedPasswordTxt" To="1" BeginTime="0:0:0.2" Duration="0:0:0.1"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ContentControl.ContentTemplate>
+                            </ContentControl>
+
+                            <ToggleButton x:Name="RevealToggleBtn" Content="👁" Margin="15,0,5,0" Width="30" Height="30" Background="Transparent" BorderThickness="1" BorderBrush="{StaticResource SensorMuted}" Foreground="{StaticResource SensorMuted}" Cursor="Hand"/>
+
+                            <Button x:Name="CopyPasswordBtn" Click="CopyPasswordBtn_Click" Content="[ COPY ]" Style="{StaticResource TechGhostButton}" Margin="5,0,0,0" Padding="10,0" Height="30" FontSize="12"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="4">
+                        <TextBlock Text="// ATTACHED_NOTES" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding Note}" Foreground="{StaticResource SensorMuted}" FontSize="14" FontFamily="Inter, Segoe UI" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Window>
