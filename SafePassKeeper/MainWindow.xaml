@@ -103,12 +103,20 @@
 
                     <StackPanel Grid.Row="1" Margin="0,0,0,25">
                         <TextBlock Text="// TARGET_URL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Domain}" Foreground="{StaticResource TritaniumCyan}" FontSize="16" FontFamily="Fira Code, Consolas"/>
+                        <!-- Změněno z TextBlock na TextBox pro možnost kopírování -->
+                        <TextBox Text="{Binding Domain, Mode=OneWay}" 
+         Style="{StaticResource SelectableTextBlockStyle}" 
+         Foreground="{StaticResource TritaniumCyan}" 
+         FontSize="16" 
+         FontFamily="Fira Code, Consolas"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="2" Margin="0,0,0,25">
                         <TextBlock Text="// USER_CREDENTIAL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Username}" Foreground="{StaticResource StarlightWhite}" FontSize="16" FontFamily="Fira Code, Consolas"/>
+                        <TextBox Text="{Binding Username, Mode=OneWay}" 
+         Style="{StaticResource SelectableTextBlockStyle}" 
+         FontSize="16" 
+         FontFamily="Fira Code, Consolas"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="3" Margin="0,0,0,25">
@@ -153,7 +161,12 @@
 
                     <StackPanel Grid.Row="4">
                         <TextBlock Text="// ATTACHED_NOTES" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Note}" Foreground="{StaticResource SensorMuted}" FontSize="14" FontFamily="Inter, Segoe UI" TextWrapping="Wrap"/>
+                        <!-- Změněno z TextBlock na TextBox pro možnost kopírování -->
+                        <TextBox Text="{Binding Note, Mode=OneWay}" 
+         Style="{StaticResource SelectableTextBlockStyle}"
+         Foreground="{StaticResource SensorMuted}" 
+         FontSize="14" 
+         FontFamily="Inter, Segoe UI"/>
                     </StackPanel>
                 </Grid>
             </Border>
