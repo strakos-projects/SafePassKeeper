@@ -93,6 +93,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -167,6 +168,27 @@
          Foreground="{StaticResource SensorMuted}" 
          FontSize="14" 
          FontFamily="Inter, Segoe UI"/>
+                    </StackPanel>
+                    <!-- SEKCE PŘÍLOH -->
+                    <StackPanel Grid.Row="5" Margin="0,25,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="// SECURE_ATTACHMENTS" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" VerticalAlignment="Center"/>
+                            <Button x:Name="AddAttachmentBtn" Content="[ UPLOAD DATA ]" Click="AddAttachmentBtn_Click" Style="{StaticResource TechGhostButton}" Margin="15,0,0,0" Padding="8,2" FontSize="10" Height="22"/>
+                        </StackPanel>
+
+                        <!-- Zobrazí kolekci názvů souborů jako čipy -->
+                        <ItemsControl ItemsSource="{Binding AttachmentNames}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Content="{Binding}" Style="{StaticResource TechAttachmentChip}" Click="DownloadAttachmentBtn_Click"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Grid>
             </Border>

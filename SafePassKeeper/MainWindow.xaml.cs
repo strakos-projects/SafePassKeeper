@@ -14,7 +14,7 @@ using System.Text.Json;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using Microsoft.Win32;
-
+using System.IO.Compression;
 namespace SafePassKeeper
 {
     public partial class MainWindow : Window
@@ -26,7 +26,180 @@ namespace SafePassKeeper
         {
             InitializeComponent();
         }
+        // Pomocná metoda pro zjištění cesty k .spk souboru
+        private string GetSpkFilePath()
+        {
+            if (string.IsNullOrEmpty(FilePath)) return string.Empty;
+            return System.IO.Path.ChangeExtension(FilePath, ".spk");
+        }
 
+        private void AddAttachmentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (AccountListBox.SelectedItem is not Account selectedAccount || string.IsNullOrEmpty(FilePath) || string.IsNullOrEmpty(Password))
+            {
+                MessageBox.Show("Please select an account first.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Title = "Select File to Encrypt",
+                Filter = "All files (*.*)|*.*"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string spkPath = GetSpkFilePath();
+                string sourceFileName = openFileDialog.FileName;
+                string safeFileName = System.IO.Path.GetFileName(sourceFileName);
+                string entryName = $"{selectedAccount.AccountId}/{safeFileName}";
+
+                try
+                {
+                    // 1. Přečtení celého (zašifrovaného) .spk do paměti a dešifrování
+                    byte[] spkBytes = File.Exists(spkPath) ? File.ReadAllBytes(spkPath) : Array.Empty<byte>();
+
+                    using (MemoryStream clearMemoryStream = new MemoryStream())
+                    {
+                        // Pokud soubor .spk už existoval, dešifrujeme ho do clearMemoryStream
+                        if (spkBytes.Length > 0)
+                        {
+                            byte[] decryptedZipBytes = DecryptBytes(spkBytes, Password);
+                            clearMemoryStream.Write(decryptedZipBytes, 0, decryptedZipBytes.Length);
+                        }
+
+                        // 2. Otevření dešifrovaného streamu jako ZIPu
+                        using (ZipArchive archive = new ZipArchive(clearMemoryStream, ZipArchiveMode.Update, true))
+                        {
+                            // Smazání případného existujícího souboru se stejným názvem, aby nedošlo k duplikaci
+                            var existingEntry = archive.GetEntry(entryName);
+                            existingEntry?.Delete();
+
+                            // Přidání nového souboru
+                            archive.CreateEntryFromFile(sourceFileName, entryName, CompressionLevel.Optimal);
+                        }
+
+                        // 3. Zašifrování aktualizovaného ZIPu a zápis zpět na disk
+                        byte[] finalZipBytes = clearMemoryStream.ToArray();
+                        byte[] newEncryptedSpk = EncryptBytes(finalZipBytes, Password);
+                        File.WriteAllBytes(spkPath, newEncryptedSpk);
+                    }
+
+                    // Aktualizace Modelu a JSONu (.txt)
+                    if (!selectedAccount.AttachmentNames.Contains(safeFileName))
+                    {
+                        // Přidáme do UI (vykreslí se čip)
+                        selectedAccount.AttachmentNames.Add(safeFileName);
+
+                        // Zkusíme uložit. Pokud to selže (vrátí false)...
+                        if (!SaveAccounts())
+                        {
+                            // UX ROLLBACK: Uložení selhalo, takže čip z UI zase smažeme, 
+                            // aby uživatel nebyl zmatený.
+                            selectedAccount.AttachmentNames.Remove(safeFileName);
+                            return; // Ukončíme metodu, nezobrazí se "DATA SECURED"
+                        }
+                    }
+
+                    // Zobrazí se POUZE pokud vše proběhlo bez chyby
+                    MessageBox.Show("File successfully encrypted and attached.", "DATA SECURED", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Encryption failed: {ex.Message}", "SYSTEM ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void DownloadAttachmentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Content is string fileName && AccountListBox.SelectedItem is Account selectedAccount)
+            {
+                if (string.IsNullOrEmpty(Password)) return;
+
+                string spkPath = GetSpkFilePath();
+                if (!File.Exists(spkPath))
+                {
+                    MessageBox.Show("Data container (.spk) not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                SaveFileDialog saveFileDialog = new SaveFileDialog
+                {
+                    FileName = fileName,
+                    Title = "Extract Decrypted File"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    try
+                    {
+                        byte[] spkBytes = File.ReadAllBytes(spkPath);
+                        byte[] decryptedZipBytes = DecryptBytes(spkBytes, Password);
+
+                        using (MemoryStream ms = new MemoryStream(decryptedZipBytes))
+                        using (ZipArchive archive = new ZipArchive(ms, ZipArchiveMode.Read))
+                        {
+                            string targetEntryName = $"{selectedAccount.AccountId}/{fileName}";
+                            ZipArchiveEntry? entry = archive.GetEntry(targetEntryName);
+
+                            if (entry != null)
+                            {
+                                entry.ExtractToFile(saveFileDialog.FileName, overwrite: true);
+                                MessageBox.Show("File successfully extracted.", "DATA EXTRACTED", MessageBoxButton.OK, MessageBoxImage.Information);
+                            }
+                            else
+                            {
+                                MessageBox.Show("File not found in the secure container.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Extraction failed: {ex.Message}", "SYSTEM ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+        }
+        // Pomocná metoda pro zašifrování surových dat (pro .spk soubor)
+        private byte[] EncryptBytes(byte[] rawData, string password)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = GenerateKey(password, aes.KeySize / 8);
+                aes.IV = GenerateKey(password, aes.BlockSize / 8);
+
+                using (ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    {
+                        cs.Write(rawData, 0, rawData.Length);
+                        cs.FlushFinalBlock();
+                    }
+                    return ms.ToArray();
+                }
+            }
+        }
+
+        // Pomocná metoda pro dešifrování surových dat (pro .spk soubor)
+        private byte[] DecryptBytes(byte[] cipherText, string password)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = GenerateKey(password, aes.KeySize / 8);
+                aes.IV = GenerateKey(password, aes.BlockSize / 8);
+
+                using (ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
+                using (MemoryStream msIn = new MemoryStream(cipherText))
+                using (CryptoStream cs = new CryptoStream(msIn, decryptor, CryptoStreamMode.Read))
+                using (MemoryStream msOut = new MemoryStream())
+                {
+                    cs.CopyTo(msOut);
+                    return msOut.ToArray();
+                }
+            }
+        }
         private void SetFilePathButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -214,17 +387,40 @@ namespace SafePassKeeper
             }
         }
 
-        private void SaveAccounts()
+        private bool SaveAccounts()
         {
+            if (string.IsNullOrEmpty(FilePath)) return false;
+
             try
             {
+                // 1. Zajištění, že soubor není označen jako "Pouze pro čtení" nebo "Skrytý"
+                if (File.Exists(FilePath))
+                {
+                    FileAttributes attributes = File.GetAttributes(FilePath);
+                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                        File.SetAttributes(FilePath, attributes & ~FileAttributes.ReadOnly);
+
+                    if ((attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                        File.SetAttributes(FilePath, attributes & ~FileAttributes.Hidden);
+                }
+
+                // 2. Serializace a šifrování
                 string json = JsonSerializer.Serialize(accounts);
                 byte[] encryptedData = Encrypt(json, Password);
+
+                // 3. Uložení
                 File.WriteAllBytes(FilePath, encryptedData);
+                return true; // ULOŽENÍ BYLO ÚSPĚŠNÉ
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MessageBox.Show($"Permission denied saving to: {FilePath}\n\nMake sure the file is not Read-Only/Hidden, or check if Windows Defender (Controlled Folder Access) is blocking the app.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false; // ULOŽENÍ SELHALO
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving accounts: {ex.Message}");
+                MessageBox.Show($"Error saving accounts: {ex.Message}", "Save Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false; // ULOŽENÍ SELHALO
             }
         }
 

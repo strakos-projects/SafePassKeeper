@@ -125,5 +125,35 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- ================= ATTACHMENT CHIP STYLE ================= -->
+        <Style TargetType="Button" x:Key="TechAttachmentChip">
+            <Setter Property="Background" Value="#1A00E5FF"/>
+            <Setter Property="Foreground" Value="{StaticResource TritaniumCyan}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TritaniumCyan}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontFamily" Value="Fira Code, Consolas"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ChipBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="2">
+                            <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}">
+                                <TextBlock Text="📁 " Foreground="{StaticResource SensorMuted}" FontSize="10" VerticalAlignment="Center"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChipBorder" Property="Background" Value="{StaticResource TritaniumCyanGlow}"/>
+                                <Setter Property="Foreground" Value="{StaticResource StarlightWhite}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Application.Resources>
 </Application>
