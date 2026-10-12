@@ -19,6 +19,22 @@ namespace SafePassKeeper
 {
     public partial class MainWindow : Window
     {
+        // Pomocná metoda pro test, zda nám OS dovolí do souboru zapisovat
+        private bool IsFileWritable(string filePath)
+        {
+            try
+            {
+                using (FileStream fs = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
+                {
+                    return true; // Máme práva pro zápis
+                }
+            }
+            catch
+            {
+                return false; // Přístup odepřen nebo je soubor zamčen
+            }
+        }
+
         private static string? FilePath;
         private static string? Password;
         private ObservableCollection<Account> accounts = new ObservableCollection<Account>();
@@ -274,6 +290,10 @@ namespace SafePassKeeper
                 EditAccountButton.Visibility = Visibility.Visible;
                 DeleteAccountButton.Visibility = Visibility.Visible;
                 ExportBackupButton.Visibility = Visibility.Visible;
+                if (!IsFileWritable(FilePath))
+                {
+                    MessageBox.Show("SYSTEM WARNING: The databank file is currently locked by another process or lacks write permissions.\n\nYou can view your credentials, but any modifications or file uploads will NOT be saved. Please resolve file permissions.", "READ-ONLY MODE", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
             catch (System.Security.Cryptography.CryptographicException)
             {
