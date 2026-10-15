@@ -84,113 +84,171 @@
                 </Border>
             </Grid>
 
+            <!-- PRAVÝ PANEL S DETAILNÍMI INFORMACEMI A SCROLLVIEWEREM -->
             <Border Grid.Column="1" Background="{StaticResource StationGray}" BorderBrush="{StaticResource GridSteel}" BorderThickness="1" 
-                    Visibility="{Binding Visibility, ElementName=DetailsTextBox}" Padding="30">
+                    Visibility="{Binding Visibility, ElementName=DetailsTextBox}" Padding="30,30,15,30">
 
-                <Grid DataContext="{Binding ElementName=AccountListBox, Path=SelectedItem}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,15,0">
+                    <Grid DataContext="{Binding ElementName=AccountListBox, Path=SelectedItem}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Margin="0,0,0,25">
-                        <TextBlock Text="// IDENTIFIER" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding AccountName}" Foreground="{StaticResource StarlightWhite}" FontSize="24" FontFamily="Rajdhani, Arial" FontWeight="Bold"/>
-                    </StackPanel>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,25">
+                            <TextBlock Text="// IDENTIFIER" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding AccountName}" Foreground="{StaticResource StarlightWhite}" FontSize="24" FontFamily="Rajdhani, Arial" FontWeight="Bold" TextWrapping="Wrap"/>
+                        </StackPanel>
 
-                    <StackPanel Grid.Row="1" Margin="0,0,0,25">
-                        <TextBlock Text="// TARGET_URL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <!-- Změněno z TextBlock na TextBox pro možnost kopírování -->
-                        <TextBox Text="{Binding Domain, Mode=OneWay}" 
-         Style="{StaticResource SelectableTextBlockStyle}" 
-         Foreground="{StaticResource TritaniumCyan}" 
-         FontSize="16" 
-         FontFamily="Fira Code, Consolas"/>
-                    </StackPanel>
+                        <StackPanel Grid.Row="1" Margin="0,0,0,25">
+                            <TextBlock Text="// TARGET_URL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Domain, Mode=OneWay}" 
+                                     Style="{StaticResource SelectableTextBlockStyle}" 
+                                     Foreground="{StaticResource TritaniumCyan}" 
+                                     FontSize="16" 
+                                     FontFamily="Fira Code, Consolas"/>
+                        </StackPanel>
 
-                    <StackPanel Grid.Row="2" Margin="0,0,0,25">
-                        <TextBlock Text="// USER_CREDENTIAL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <TextBox Text="{Binding Username, Mode=OneWay}" 
-         Style="{StaticResource SelectableTextBlockStyle}" 
-         FontSize="16" 
-         FontFamily="Fira Code, Consolas"/>
-                    </StackPanel>
+                        <StackPanel Grid.Row="2" Margin="0,0,0,25">
+                            <TextBlock Text="// USER_CREDENTIAL" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Username, Mode=OneWay}" 
+                                     Style="{StaticResource SelectableTextBlockStyle}" 
+                                     FontSize="16" 
+                                     FontFamily="Fira Code, Consolas"/>
+                        </StackPanel>
 
-                    <StackPanel Grid.Row="3" Margin="0,0,0,25">
-                        <TextBlock Text="// ENCRYPTED_KEY" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Grid.Row="3" Margin="0,0,0,25">
+                            <TextBlock Text="// ENCRYPTED_KEY" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal">
 
-                            <ContentControl Content="{Binding}">
-                                <ContentControl.ContentTemplate>
+                                <ContentControl Content="{Binding}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <TextBlock x:Name="MaskedPasswordTxt" Text="••••••••••••••••" Foreground="{StaticResource StarlightWhite}" FontSize="18" FontFamily="Fira Code, Consolas" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="RevealedPasswordTxt" Text="{Binding Password}" Visibility="Collapsed" Foreground="{StaticResource HullOrange}" FontSize="18" FontFamily="Fira Code, Consolas" VerticalAlignment="Center">
+                                                    <TextBlock.Effect>
+                                                        <DropShadowEffect Color="#FF3300" BlurRadius="8" ShadowDepth="0" Opacity="0.8"/>
+                                                    </TextBlock.Effect>
+                                                </TextBlock>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, ElementName=RevealToggleBtn}" Value="True">
+                                                    <Setter TargetName="MaskedPasswordTxt" Property="Visibility" Value="Collapsed"/>
+                                                    <Setter TargetName="RevealedPasswordTxt" Property="Visibility" Value="Visible"/>
+                                                    <DataTrigger.EnterActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard>
+                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" Storyboard.TargetName="RevealedPasswordTxt" From="0" To="1" Duration="0:0:0.1" AutoReverse="True" RepeatBehavior="2x"/>
+                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" Storyboard.TargetName="RevealedPasswordTxt" To="1" BeginTime="0:0:0.2" Duration="0:0:0.1"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.EnterActions>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+
+                                <ToggleButton x:Name="RevealToggleBtn" Content="👁" Margin="15,0,5,0" Width="30" Height="30" Background="Transparent" BorderThickness="1" BorderBrush="{StaticResource SensorMuted}" Foreground="{StaticResource SensorMuted}" Cursor="Hand"/>
+
+                                <Button x:Name="CopyPasswordBtn" Click="CopyPasswordBtn_Click" Content="[ COPY ]" Style="{StaticResource TechGhostButton}" Margin="5,0,0,0" Padding="10,0" Height="30" FontSize="12"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4">
+                            <TextBlock Text="// ATTACHED_NOTES" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Note, Mode=OneWay}" 
+                                     Style="{StaticResource SelectableTextBlockStyle}"
+                                     Foreground="{StaticResource SensorMuted}" 
+                                     FontSize="14" 
+                                     FontFamily="Inter, Segoe UI"/>
+                        </StackPanel>
+
+                        <!-- SEKCE PŘÍLOH -->
+                        <StackPanel Grid.Row="5" Margin="0,25,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="// SECURE_ATTACHMENTS" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" VerticalAlignment="Center"/>
+                                <Button x:Name="AddAttachmentBtn" Content="[ UPLOAD DATA ]" Click="AddAttachmentBtn_Click" Style="{StaticResource TechGhostButton}" Margin="15,0,0,0" Padding="8,2" FontSize="10" Height="22"/>
+                            </StackPanel>
+
+                            <!-- Zobrazí kolekci příloh s detekcí chybějících souborů a možností smazání -->
+                            <ItemsControl ItemsSource="{Binding AttachmentItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid>
-                                            <TextBlock x:Name="MaskedPasswordTxt" Text="••••••••••••••••" Foreground="{StaticResource StarlightWhite}" FontSize="18" FontFamily="Fira Code, Consolas" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="RevealedPasswordTxt" Text="{Binding Password}" Visibility="Collapsed" Foreground="{StaticResource HullOrange}" FontSize="18" FontFamily="Fira Code, Consolas" VerticalAlignment="Center">
-                                                <TextBlock.Effect>
-                                                    <!-- ZDE JE OPRAVA BARVY NA #FF3300 -->
-                                                    <DropShadowEffect Color="#FF3300" BlurRadius="8" ShadowDepth="0" Opacity="0.8"/>
-                                                </TextBlock.Effect>
-                                            </TextBlock>
-                                        </Grid>
+                                        <Border x:Name="ChipBorder" Background="#1A00E5FF" BorderBrush="{StaticResource TritaniumCyan}" BorderThickness="1" CornerRadius="2" Margin="0,0,8,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <!-- Hlavní část čipu: Stažení / extrakce přílohy -->
+                                                <Button Click="DownloadAttachmentBtn_Click" Tag="{Binding}" Cursor="Hand" Background="Transparent" BorderThickness="0" Padding="10,4,8,4">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock x:Name="IconTxt" Text="📁 " Foreground="{StaticResource SensorMuted}" FontSize="10" VerticalAlignment="Center"/>
+                                                                    <TextBlock x:Name="FileTxt" Text="{Binding DisplayText}" Foreground="{StaticResource TritaniumCyan}" FontFamily="Fira Code, Consolas" FontSize="12" VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="FileTxt" Property="Foreground" Value="{StaticResource StarlightWhite}"/>
+                                                                </Trigger>
+                                                                <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                                                    <Setter TargetName="IconTxt" Property="Visibility" Value="Collapsed"/>
+                                                                    <Setter TargetName="FileTxt" Property="Foreground" Value="{StaticResource HullOrange}"/>
+                                                                </DataTrigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+
+                                                <!-- Jemný oddělovač -->
+                                                <Border x:Name="ChipDivider" Width="1" Background="#3300E5FF" Margin="0,4"/>
+
+                                                <!-- Sekundární akce: Nenápadné tlačítko pro trvalé smazání přílohy -->
+                                                <Button Click="DeleteAttachmentBtn_Click" Tag="{Binding}" ToolTip="Permanently delete attachment" Cursor="Hand" Background="Transparent" BorderThickness="0" Padding="7,4">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="DelBd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                                <TextBlock x:Name="DelTxt" Text="✕" Foreground="{StaticResource SensorMuted}" FontFamily="Fira Code, Consolas" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Opacity="0.45"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="DelBd" Property="Background" Value="#44FF3300"/>
+                                                                    <Setter TargetName="DelTxt" Property="Foreground" Value="{StaticResource HullOrange}"/>
+                                                                    <Setter TargetName="DelTxt" Property="Opacity" Value="1.0"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
                                         <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsChecked, ElementName=RevealToggleBtn}" Value="True">
-                                                <Setter TargetName="MaskedPasswordTxt" Property="Visibility" Value="Collapsed"/>
-                                                <Setter TargetName="RevealedPasswordTxt" Property="Visibility" Value="Visible"/>
-                                                <DataTrigger.EnterActions>
-                                                    <BeginStoryboard>
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" Storyboard.TargetName="RevealedPasswordTxt" From="0" To="1" Duration="0:0:0.1" AutoReverse="True" RepeatBehavior="2x"/>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" Storyboard.TargetName="RevealedPasswordTxt" To="1" BeginTime="0:0:0.2" Duration="0:0:0.1"/>
-                                                        </Storyboard>
-                                                    </BeginStoryboard>
-                                                </DataTrigger.EnterActions>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ChipBorder" Property="Background" Value="{StaticResource TritaniumCyanGlow}"/>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                                <Setter TargetName="ChipBorder" Property="Background" Value="#22FF3300"/>
+                                                <Setter TargetName="ChipBorder" Property="BorderBrush" Value="{StaticResource HullOrange}"/>
+                                                <Setter TargetName="ChipDivider" Property="Background" Value="#44FF3300"/>
+                                                <Setter TargetName="ChipBorder" Property="ToolTip" Value="ERROR: Attachment data is missing from the .spk secure container."/>
                                             </DataTrigger>
                                         </DataTemplate.Triggers>
                                     </DataTemplate>
-                                </ContentControl.ContentTemplate>
-                            </ContentControl>
-
-                            <ToggleButton x:Name="RevealToggleBtn" Content="👁" Margin="15,0,5,0" Width="30" Height="30" Background="Transparent" BorderThickness="1" BorderBrush="{StaticResource SensorMuted}" Foreground="{StaticResource SensorMuted}" Cursor="Hand"/>
-
-                            <Button x:Name="CopyPasswordBtn" Click="CopyPasswordBtn_Click" Content="[ COPY ]" Style="{StaticResource TechGhostButton}" Margin="5,0,0,0" Padding="10,0" Height="30" FontSize="12"/>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
-                    </StackPanel>
-
-                    <StackPanel Grid.Row="4">
-                        <TextBlock Text="// ATTACHED_NOTES" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" Margin="0,0,0,5"/>
-                        <!-- Změněno z TextBlock na TextBox pro možnost kopírování -->
-                        <TextBox Text="{Binding Note, Mode=OneWay}" 
-         Style="{StaticResource SelectableTextBlockStyle}"
-         Foreground="{StaticResource SensorMuted}" 
-         FontSize="14" 
-         FontFamily="Inter, Segoe UI"/>
-                    </StackPanel>
-                    <!-- SEKCE PŘÍLOH -->
-                    <StackPanel Grid.Row="5" Margin="0,25,0,0">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <TextBlock Text="// SECURE_ATTACHMENTS" Foreground="{StaticResource SensorMuted}" FontFamily="Rajdhani, Consolas" FontSize="12" VerticalAlignment="Center"/>
-                            <Button x:Name="AddAttachmentBtn" Content="[ UPLOAD DATA ]" Click="AddAttachmentBtn_Click" Style="{StaticResource TechGhostButton}" Margin="15,0,0,0" Padding="8,2" FontSize="10" Height="22"/>
-                        </StackPanel>
-
-                        <!-- Zobrazí kolekci názvů souborů jako čipy -->
-                        <ItemsControl ItemsSource="{Binding AttachmentNames}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Content="{Binding}" Style="{StaticResource TechAttachmentChip}" Click="DownloadAttachmentBtn_Click"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Grid>
+                    </Grid>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>

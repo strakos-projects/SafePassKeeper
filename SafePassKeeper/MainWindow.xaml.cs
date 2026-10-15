@@ -13,8 +13,10 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using Microsoft.Win32;
 using System.IO.Compression;
+
 namespace SafePassKeeper
 {
     public partial class MainWindow : Window
@@ -38,15 +40,69 @@ namespace SafePassKeeper
         private static string? FilePath;
         private static string? Password;
         private ObservableCollection<Account> accounts = new ObservableCollection<Account>();
+
         public MainWindow()
         {
             InitializeComponent();
         }
+
         // Pomocná metoda pro zjištění cesty k .spk souboru
         private string GetSpkFilePath()
         {
             if (string.IsNullOrEmpty(FilePath)) return string.Empty;
             return System.IO.Path.ChangeExtension(FilePath, ".spk");
+        }
+
+        // Ověří, zda přílohy uvedené v JSONu skutečně existují v šifrovaném .spk kontejneru
+        private void VerifyAccountAttachments(Account? account)
+        {
+            if (account == null) return;
+
+            account.AttachmentItems.Clear();
+            if (account.AttachmentNames == null || account.AttachmentNames.Count == 0)
+                return;
+
+            string spkPath = GetSpkFilePath();
+            HashSet<string> existingEntries = new HashSet<string>();
+            bool spkValid = false;
+
+            if (!string.IsNullOrEmpty(spkPath) && File.Exists(spkPath) && !string.IsNullOrEmpty(Password))
+            {
+                try
+                {
+                    byte[] spkBytes = File.ReadAllBytes(spkPath);
+                    if (spkBytes.Length > 0)
+                    {
+                        byte[] decryptedZipBytes = DecryptBytes(spkBytes, Password);
+                        using (MemoryStream ms = new MemoryStream(decryptedZipBytes))
+                        using (ZipArchive archive = new ZipArchive(ms, ZipArchiveMode.Read))
+                        {
+                            foreach (var entry in archive.Entries)
+                            {
+                                existingEntries.Add(entry.FullName);
+                            }
+                            spkValid = true;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Pokud je .spk poškozený nebo nečitelný, spkValid zůstane false
+                    spkValid = false;
+                }
+            }
+
+            foreach (string fileName in account.AttachmentNames)
+            {
+                string expectedEntry = $"{account.AccountId}/{fileName}";
+                bool exists = spkValid && existingEntries.Contains(expectedEntry);
+
+                account.AttachmentItems.Add(new AttachmentItem
+                {
+                    FileName = fileName,
+                    IsMissing = !exists
+                });
+            }
         }
 
         private void AddAttachmentBtn_Click(object sender, RoutedEventArgs e)
@@ -104,20 +160,18 @@ namespace SafePassKeeper
                     // Aktualizace Modelu a JSONu (.txt)
                     if (!selectedAccount.AttachmentNames.Contains(safeFileName))
                     {
-                        // Přidáme do UI (vykreslí se čip)
                         selectedAccount.AttachmentNames.Add(safeFileName);
 
-                        // Zkusíme uložit. Pokud to selže (vrátí false)...
                         if (!SaveAccounts())
                         {
-                            // UX ROLLBACK: Uložení selhalo, takže čip z UI zase smažeme, 
-                            // aby uživatel nebyl zmatený.
+                            // UX ROLLBACK: Uložení selhalo, čip zase odebereme
                             selectedAccount.AttachmentNames.Remove(safeFileName);
-                            return; // Ukončíme metodu, nezobrazí se "DATA SECURED"
+                            VerifyAccountAttachments(selectedAccount);
+                            return;
                         }
                     }
 
-                    // Zobrazí se POUZE pokud vše proběhlo bez chyby
+                    VerifyAccountAttachments(selectedAccount);
                     MessageBox.Show("File successfully encrypted and attached.", "DATA SECURED", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
@@ -129,17 +183,48 @@ namespace SafePassKeeper
 
         private void DownloadAttachmentBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Content is string fileName && AccountListBox.SelectedItem is Account selectedAccount)
+            if (sender is Button btn && btn.Tag is AttachmentItem attachment && AccountListBox.SelectedItem is Account selectedAccount)
             {
                 if (string.IsNullOrEmpty(Password)) return;
 
+                string fileName = attachment.FileName;
                 string spkPath = GetSpkFilePath();
+                string targetEntryName = $"{selectedAccount.AccountId}/{fileName}";
+
+                // 1. Ověření existence .spk souboru před otevřením SaveFileDialogu
                 if (!File.Exists(spkPath))
                 {
-                    MessageBox.Show("Data container (.spk) not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    VerifyAccountAttachments(selectedAccount);
+                    MessageBox.Show($"Secure data container (.spk) was not found.\n\nAttachment '{fileName}' is currently unavailable.", "MISSING CONTAINER", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
+                // 2. Ověření, že záznam v .spk skutečně existuje
+                byte[] decryptedZipBytes;
+                try
+                {
+                    byte[] spkBytes = File.ReadAllBytes(spkPath);
+                    decryptedZipBytes = DecryptBytes(spkBytes, Password);
+
+                    using (MemoryStream msCheck = new MemoryStream(decryptedZipBytes))
+                    using (ZipArchive archiveCheck = new ZipArchive(msCheck, ZipArchiveMode.Read))
+                    {
+                        if (archiveCheck.GetEntry(targetEntryName) == null)
+                        {
+                            VerifyAccountAttachments(selectedAccount);
+                            MessageBox.Show($"Attachment '{fileName}' was not found inside the secure (.spk) container.", "MISSING ATTACHMENT", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    VerifyAccountAttachments(selectedAccount);
+                    MessageBox.Show($"Failed to read secure container: {ex.Message}", "SYSTEM ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // 3. Samotné uložení dešifrovaného souboru
                 SaveFileDialog saveFileDialog = new SaveFileDialog
                 {
                     FileName = fileName,
@@ -150,23 +235,14 @@ namespace SafePassKeeper
                 {
                     try
                     {
-                        byte[] spkBytes = File.ReadAllBytes(spkPath);
-                        byte[] decryptedZipBytes = DecryptBytes(spkBytes, Password);
-
                         using (MemoryStream ms = new MemoryStream(decryptedZipBytes))
                         using (ZipArchive archive = new ZipArchive(ms, ZipArchiveMode.Read))
                         {
-                            string targetEntryName = $"{selectedAccount.AccountId}/{fileName}";
                             ZipArchiveEntry? entry = archive.GetEntry(targetEntryName);
-
                             if (entry != null)
                             {
                                 entry.ExtractToFile(saveFileDialog.FileName, overwrite: true);
                                 MessageBox.Show("File successfully extracted.", "DATA EXTRACTED", MessageBoxButton.OK, MessageBoxImage.Information);
-                            }
-                            else
-                            {
-                                MessageBox.Show("File not found in the secure container.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                             }
                         }
                     }
@@ -177,6 +253,69 @@ namespace SafePassKeeper
                 }
             }
         }
+
+        private void DeleteAttachmentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is AttachmentItem attachment && AccountListBox.SelectedItem is Account selectedAccount)
+            {
+                if (string.IsNullOrEmpty(Password)) return;
+
+                string fileName = attachment.FileName;
+                string promptMessage = attachment.IsMissing
+                    ? $"Attachment '{fileName}' is missing from the secure container.\n\nDo you want to permanently remove this broken reference from the account?"
+                    : $"Are you sure you want to permanently delete the encrypted attachment '{fileName}'?\n\nThis operation is irreversible and will purge the file from the secure databank.";
+
+                var result = MessageBox.Show(
+                    promptMessage,
+                    "CONFIRM PERMANENT PURGE",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning,
+                    MessageBoxResult.No);
+
+                if (result != MessageBoxResult.Yes)
+                    return;
+
+                string spkPath = GetSpkFilePath();
+                string targetEntryName = $"{selectedAccount.AccountId}/{fileName}";
+
+                try
+                {
+                    // Pokud .spk soubor existuje, odstraníme záznam přímo ze šifrovaného ZIPu
+                    if (File.Exists(spkPath))
+                    {
+                        byte[] spkBytes = File.ReadAllBytes(spkPath);
+                        if (spkBytes.Length > 0)
+                        {
+                            using (MemoryStream clearMemoryStream = new MemoryStream())
+                            {
+                                byte[] decryptedZipBytes = DecryptBytes(spkBytes, Password);
+                                clearMemoryStream.Write(decryptedZipBytes, 0, decryptedZipBytes.Length);
+
+                                using (ZipArchive archive = new ZipArchive(clearMemoryStream, ZipArchiveMode.Update, true))
+                                {
+                                    ZipArchiveEntry? existingEntry = archive.GetEntry(targetEntryName);
+                                    existingEntry?.Delete();
+                                }
+
+                                byte[] finalZipBytes = clearMemoryStream.ToArray();
+                                byte[] newEncryptedSpk = EncryptBytes(finalZipBytes, Password);
+                                File.WriteAllBytes(spkPath, newEncryptedSpk);
+                            }
+                        }
+                    }
+
+                    // Odstranění reference z účtu a uložení JSONu
+                    selectedAccount.AttachmentNames.Remove(fileName);
+                    SaveAccounts();
+                    VerifyAccountAttachments(selectedAccount);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete attachment: {ex.Message}", "SYSTEM ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         // Pomocná metoda pro zašifrování surových dat (pro .spk soubor)
         private byte[] EncryptBytes(byte[] rawData, string password)
         {
@@ -216,6 +355,7 @@ namespace SafePassKeeper
                 }
             }
         }
+
         private void SetFilePathButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -281,7 +421,12 @@ namespace SafePassKeeper
                     }
                 }
 
-                // Napojení dat (BEZ DisplayMemberPath - to dělalo ten error na screenshotu!)
+                // Ověření stavu příloh pro všechny načtené účty
+                foreach (var acc in accounts)
+                {
+                    VerifyAccountAttachments(acc);
+                }
+
                 AccountListBox.ItemsSource = accounts;
 
                 AccountListBox.Visibility = Visibility.Visible;
@@ -290,6 +435,7 @@ namespace SafePassKeeper
                 EditAccountButton.Visibility = Visibility.Visible;
                 DeleteAccountButton.Visibility = Visibility.Visible;
                 ExportBackupButton.Visibility = Visibility.Visible;
+
                 if (!IsFileWritable(FilePath))
                 {
                     MessageBox.Show("SYSTEM WARNING: The databank file is currently locked by another process or lacks write permissions.\n\nYou can view your credentials, but any modifications or file uploads will NOT be saved. Please resolve file permissions.", "READ-ONLY MODE", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -297,17 +443,13 @@ namespace SafePassKeeper
             }
             catch (System.Security.Cryptography.CryptographicException)
             {
-                // Specifický catch, pokud uživatel zadá ŠPATNÉ HESLO
                 MessageBox.Show("DECRYPTION FAILED. Invalid master key or corrupted databank.", "Security Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                // Catch pro všechny ostatní chyby
                 MessageBox.Show($"SYSTEM ERROR: {ex.Message}");
             }
         }
-
-
 
         private void CreateDefaultAccounts()
         {
@@ -334,12 +476,12 @@ namespace SafePassKeeper
             SaveAccounts();
         }
 
-        
-
         private void AccountListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (AccountListBox.SelectedItem is Account selectedAccount)
             {
+                VerifyAccountAttachments(selectedAccount);
+
                 DetailsTextBox.Text = $"Account Name: {selectedAccount.AccountName}\n" +
                                       $"Username: {selectedAccount.Username}\n" +
                                       $"Password: {selectedAccount.Password}\n" +
@@ -413,7 +555,6 @@ namespace SafePassKeeper
 
             try
             {
-                // 1. Zajištění, že soubor není označen jako "Pouze pro čtení" nebo "Skrytý"
                 if (File.Exists(FilePath))
                 {
                     FileAttributes attributes = File.GetAttributes(FilePath);
@@ -424,23 +565,21 @@ namespace SafePassKeeper
                         File.SetAttributes(FilePath, attributes & ~FileAttributes.Hidden);
                 }
 
-                // 2. Serializace a šifrování
                 string json = JsonSerializer.Serialize(accounts);
                 byte[] encryptedData = Encrypt(json, Password);
 
-                // 3. Uložení
                 File.WriteAllBytes(FilePath, encryptedData);
-                return true; // ULOŽENÍ BYLO ÚSPĚŠNÉ
+                return true;
             }
             catch (UnauthorizedAccessException)
             {
                 MessageBox.Show($"Permission denied saving to: {FilePath}\n\nMake sure the file is not Read-Only/Hidden, or check if Windows Defender (Controlled Folder Access) is blocking the app.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false; // ULOŽENÍ SELHALO
+                return false;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error saving accounts: {ex.Message}", "Save Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false; // ULOŽENÍ SELHALO
+                return false;
             }
         }
 
@@ -510,6 +649,7 @@ namespace SafePassKeeper
             var editAccountWindow = new AddAccountWindow(selectedAccount);
             if (editAccountWindow.ShowDialog() == true)
             {
+                VerifyAccountAttachments(selectedAccount);
                 AccountListBox.ItemsSource = null;
                 AccountListBox.ItemsSource = accounts;
                 SaveAccounts();
@@ -527,26 +667,23 @@ namespace SafePassKeeper
                 return keyBytes;
             }
         }
+
         private async void CopyPasswordBtn_Click(object sender, RoutedEventArgs e)
         {
             if (AccountListBox.SelectedItem is Account selectedAccount)
             {
-                // Okamžitě zkopíruje heslo vybraného účtu do schránky
                 Clipboard.SetText(selectedAccount.Password);
 
                 if (sender is Button btn)
                 {
-                    // Dočasná změna UI
                     string originalText = btn.Content.ToString();
                     var originalBrush = btn.Foreground;
 
                     btn.Content = "[ COPIED ]";
-                    btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FF66")); // Shield Green
+                    btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FF66"));
 
-                    // Počká 1 sekundu
                     await Task.Delay(1000);
 
-                    // Vrátí do původního stavu
                     btn.Content = originalText;
                     btn.Foreground = originalBrush;
                 }
